@@ -1,0 +1,134 @@
+{
+  "name": "vscode-code-review",
+  "displayName": "Code Review Extension",
+  "description": "AI-powered code review for uncommitted Git changes.",
+  "version": "0.0.1",
+  "publisher": "pujan-heizen",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pujan-heizen/code-review-extension"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:vscodeCodeReview.runReview",
+    "onCommand:vscodeCodeReview.openSettings",
+    "onCommand:vscodeCodeReview.pickModel"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vscodeCodeReview",
+          "title": "Code Review",
+          "icon": "$(checklist)"
+        }
+      ]
+    },
+    "views": {
+      "vscodeCodeReview": [
+        {
+          "type": "webview",
+          "id": "vscodeCodeReview.sidebar",
+          "name": "Review",
+          "icon": "$(checklist)"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vscodeCodeReview.runReview",
+        "title": "Code Review: Review Uncommitted Changes",
+        "icon": "$(play)"
+      },
+      {
+        "command": "vscodeCodeReview.openSettings",
+        "title": "Code Review: Open Settings"
+      },
+      {
+        "command": "vscodeCodeReview.pickModel",
+        "title": "Code Review: Pick Model"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "vscodeCodeReview.runReview",
+          "when": "view == vscodeCodeReview.sidebar",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Code Review",
+      "properties": {
+        "vscodeCodeReview.provider": {
+          "type": "string",
+          "default": "anthropic",
+          "enum": [
+            "openai",
+            "anthropic",
+            "google"
+          ],
+          "enumDescriptions": [
+            "OpenAI (GPT models)",
+            "Anthropic (Claude models)",
+            "Google (Gemini models)"
+          ],
+          "description": "AI provider to use for code reviews."
+        },
+        "vscodeCodeReview.model": {
+          "type": "string",
+          "default": "claude-haiku-4.5",
+          "markdownDescription": "Model name for the selected provider. To pick from a fetched list, run [Code Review: Pick Model](command:vscodeCodeReview.pickModel)."
+        },
+        "vscodeCodeReview.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "**OpenAI API key** (stored in settings as plain text). Prefer using a dedicated VS Code profile for this if needed."
+        },
+        "vscodeCodeReview.anthropicApiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "**Anthropic API key** (stored in settings as plain text). Prefer using a dedicated VS Code profile for this if needed."
+        },
+        "vscodeCodeReview.googleApiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "**Google API key** (stored in settings as plain text). Prefer using a dedicated VS Code profile for this if needed."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "watch": "tsc -watch -p .",
+    "vscode:prepublish": "npm run compile"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "2.0.56",
+    "@ai-sdk/google": "2.0.51",
+    "@ai-sdk/openai": "2.0.88",
+    "ai": "5.0.116",
+    "marked": "^17.0.1",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "^1.85.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
+  }
+}
