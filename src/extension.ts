@@ -46,10 +46,13 @@ export function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        const diff = await git.getUncommittedChanges();
-        if (!diff.diff.trim()) {
+        const diff = await git.getUnstagedChanges();
+        if (!diff.unstagedDiff.trim()) {
+          const stagedCount = diff.stagedFiles.length;
           await vscode.window.showInformationMessage(
-            "No uncommitted changes found. Working tree is clean.",
+            stagedCount > 0
+              ? `No unstaged changes found. Nothing to review. (${stagedCount} staged file(s) not reviewed.)`
+              : "No unstaged changes found. Nothing to review.",
           );
           return;
         }

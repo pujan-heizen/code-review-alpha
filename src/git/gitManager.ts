@@ -27,7 +27,7 @@ interface Change {
 }
 
 export interface GitDiffResult {
-  diff: string;
+  unstagedDiff: string;
   stagedFiles: vscode.Uri[];
   unstagedFiles: vscode.Uri[];
   totalLines: number;
@@ -76,25 +76,21 @@ export class GitManager {
     );
   }
 
-  async getUncommittedChanges(): Promise<GitDiffResult> {
+  async getUnstagedChanges(): Promise<GitDiffResult> {
     const repo = this.getRepository();
     if (!repo) {
       throw new Error("No Git repository found in the current workspace.");
     }
 
-    const [stagedDiff, unstagedDiff] = await Promise.all([repo.diff(true), repo.diff(false)]);
+    const unstagedDiff = await repo.diff(false);
     const stagedFiles = repo.state.indexChanges.map((c) => c.uri);
     const unstagedFiles = repo.state.workingTreeChanges.map((c) => c.uri);
 
-    let combined = "";
-    if (stagedDiff) combined += `=== STAGED CHANGES ===\n${stagedDiff}\n`;
-    if (unstagedDiff) combined += `=== UNSTAGED CHANGES ===\n${unstagedDiff}\n`;
-
     return {
-      diff: combined,
+      unstagedDiff: unstagedDiff ?? "",
       stagedFiles,
       unstagedFiles,
-      totalLines: combined.split("\n").length,
+      totalLines: (unstagedDiff ?? "").split("\n").length,
     };
   }
 }

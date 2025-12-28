@@ -64,7 +64,14 @@ function normalizeReviewOutput(input: unknown): unknown {
       const startLine = getNumber(f, "startLine");
       const endLine = getNumber(f, "endLine");
       const replacement = getString(f, "replacement");
-      if (!id || !title || !filePath || startLine === undefined || endLine === undefined || !replacement)
+      if (
+        !id ||
+        !title ||
+        !filePath ||
+        startLine === undefined ||
+        endLine === undefined ||
+        !replacement
+      )
         return null;
       return {
         id,
@@ -141,22 +148,71 @@ export async function runReview(args: RunReviewArgs): Promise<ReviewOutput> {
     },
   };
 
+  function renderWorkspaceTree(files: string[]): string {
+    type Node = { children: Map<string, Node>; isFile: boolean };
+    const root: Node = { children: new Map(), isFile: false };
+
+    for (const file of files) {
+      const parts = file.split("/").filter(Boolean);
+      let cur = root;
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const isFile = i === parts.length - 1;
+        const existing = cur.children.get(part);
+        if (!existing) {
+          cur.children.set(part, { children: new Map(), isFile });
+          cur = cur.children.get(part)!;
+        } else {
+          existing.isFile = existing.isFile || isFile;
+          cur = existing;
+        }
+      }
+    }
+
+    const lines: string[] = [];
+    const walk = (node: Node, prefix: string) => {
+      const entries = [...node.children.entries()].sort(([a], [b]) => a.localeCompare(b));
+      for (const [name, child] of entries) {
+        const label = child.isFile && child.children.size === 0 ? name : `${name}/`;
+        lines.push(`${prefix}- ${label}`);
+        if (child.children.size > 0) walk(child, `${prefix}  `);
+      }
+    };
+    walk(root, "");
+    return lines.join("\n");
+  }
+
   const rel = (u: vscode.Uri) => vscode.workspace.asRelativePath(u, false).replaceAll("\\", "/");
-  const staged = args.diff.stagedFiles.map(rel);
   const unstaged = args.diff.unstagedFiles.map(rel);
 
+  let tree = "";
+  try {
+    const listed = await wsTools.listFiles({ root: undefined, maxEntries: 2000 });
+    tree = renderWorkspaceTree(listed.files);
+  } catch {
+    tree = "(workspace tree unavailable)";
+  }
+
   const prompt = [
-    `Staged files (${staged.length}):`,
-    ...staged.map((p) => `- ${p}`),
+    "PROJECT TREE (workspace-relative paths):",
+    tree,
     "",
-    `Unstaged files (${unstaged.length}):`,
+    `FILES UNDER REVIEW (UNSTAGED) (${unstaged.length}):`,
     ...unstaged.map((p) => `- ${p}`),
     "",
-    "Unified diff:",
-    args.diff.diff,
+    "UNSTAGED_DIFF (THE ONLY THING YOU MAY REVIEW):",
+    args.diff.unstagedDiff,
   ].join("\n");
 
-  const system = args.systemPrompt;
+  const system = [
+    args.systemPrompt,
+    "",
+    "CRITICAL CONSTRAINTS (must follow):",
+    "- You MUST review ONLY the code in the section 'UNSTAGED_DIFF'.",
+    "- You may use tools (readFile/search/listFiles/listRules/readRule) ONLY to gather context to understand the UNSTAGED_DIFF.",
+    "- DO NOT create findings or fixes about any code not present in UNSTAGED_DIFF, even if you read it as context.",
+    "- If you suspect an issue in context-only code, mention it ONLY if it is directly caused by, referenced by, or required to validate a change in UNSTAGED_DIFF.",
+  ].join("\n");
 
   // Prefer structured output: forces required fields to be present (nullable fields must be `null`).
   try {
