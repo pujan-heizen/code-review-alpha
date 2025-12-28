@@ -188,7 +188,7 @@ export function getSidebarHtml(): { html: string; nonce: string } {
           setUsage(msg.usageText || 'N/A');
           const isReviewing = !!msg.isReviewing;
           runBtn.disabled = isReviewing;
-          runBtn.textContent = isReviewing ? '⏳ Reviewing...' : 'Run Code Review';
+          runBtn.textContent = isReviewing ? 'Reviewing...' : 'Run Code Review';
           cancelBtn.style.display = isReviewing ? 'block' : 'none';
           promptSelect.disabled = isReviewing;
           editPromptBtn.disabled = isReviewing;
