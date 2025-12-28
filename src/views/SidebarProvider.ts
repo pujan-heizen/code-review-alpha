@@ -5,6 +5,7 @@ import { PromptManager, type PromptInfo } from "../prompts/promptManager";
 type SidebarToExtensionMessage =
   | { type: "init" }
   | { type: "runReview" }
+  | { type: "cancelReview" }
   | { type: "openSettings" }
   | { type: "selectPrompt"; promptId: string }
   | { type: "editPrompt"; promptId: string }
@@ -19,6 +20,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   private activity: string[] = [];
   private usageText = "N/A";
   private prompts: PromptInfo[] = [];
+  private abortController?: AbortController;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -48,6 +50,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           break;
         case "runReview":
           await vscode.commands.executeCommand("vscodeCodeReview.runReview");
+          break;
+        case "cancelReview":
+          this.cancelReview();
           break;
         case "openSettings":
           await vscode.commands.executeCommand("vscodeCodeReview.openSettings");
@@ -83,8 +88,22 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     if (value) {
       this.activity = [];
       this.usageText = "N/A";
+    } else {
+      this.abortController = undefined;
     }
     void this.postState();
+  }
+
+  createAbortController(): AbortController {
+    this.abortController = new AbortController();
+    return this.abortController;
+  }
+
+  cancelReview(): void {
+    if (this.abortController) {
+      this.abortController.abort();
+      this.pushActivity("Review cancelled by user");
+    }
   }
 
   pushActivity(line: string): void {

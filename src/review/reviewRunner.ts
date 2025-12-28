@@ -102,6 +102,7 @@ export interface RunReviewArgs {
     detail: string;
   }) => void;
   onUsage?: (usage: unknown) => void;
+  abortSignal?: AbortSignal;
 }
 
 export async function runReview(args: RunReviewArgs): Promise<ReviewOutput> {
@@ -223,11 +224,16 @@ export async function runReview(args: RunReviewArgs): Promise<ReviewOutput> {
       tools,
       stopWhen: stepCountIs(20),
       experimental_output: Output.object({ schema: ReviewOutputSchema }),
+      abortSignal: args.abortSignal,
     });
 
     args.onUsage?.(result.usage);
     return result.experimental_output as ReviewOutput;
-  } catch {
+  } catch (err) {
+    // Re-throw abort errors
+    if (err instanceof Error && err.name === "AbortError") {
+      throw err;
+    }
     // Fallback: parse JSON and normalize missing nullable fields to null.
     const result = await generateText({
       model: resolved.model,
@@ -235,6 +241,7 @@ export async function runReview(args: RunReviewArgs): Promise<ReviewOutput> {
       prompt,
       tools,
       stopWhen: stepCountIs(20),
+      abortSignal: args.abortSignal,
     });
 
     args.onUsage?.(result.usage);

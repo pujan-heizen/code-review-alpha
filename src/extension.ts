@@ -74,11 +74,13 @@ export function activate(context: vscode.ExtensionContext) {
             const { content: systemPrompt } = await promptManager.getPromptContent(activePromptId);
 
             sidebarProvider.setReviewing(true);
+            const abortController = sidebarProvider.createAbortController();
             const result = await runReview({
               extensionUri: context.extensionUri,
               diff,
               systemPrompt,
               output,
+              abortSignal: abortController.signal,
               onActivity: (evt) => {
                 if (evt.type === "readFile")
                   sidebarProvider.pushActivity(`readFile: ${evt.detail}`);
@@ -107,10 +109,16 @@ export function activate(context: vscode.ExtensionContext) {
           },
         );
       } catch (err) {
+        sidebarProvider.setReviewing(false);
+        // Handle user cancellation gracefully
+        if (err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"))) {
+          output.appendLine(`[info] Review cancelled by user`);
+          await vscode.window.showInformationMessage("Code review cancelled.");
+          return;
+        }
         const msg = err instanceof Error ? err.message : String(err);
         output.appendLine(`[error] runReview: ${msg}`);
         await vscode.window.showErrorMessage(`Code review failed: ${msg}`);
-        sidebarProvider.setReviewing(false);
       }
     }),
   );

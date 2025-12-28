@@ -73,6 +73,7 @@
       "title": "Code Review",
       "properties": {
         "vscodeCodeReview.provider": {
+          "order": 1,
           "type": "string",
           "default": "anthropic",
           "enum": [
@@ -87,25 +88,29 @@
           ],
           "description": "AI provider to use for code reviews."
         },
-        "vscodeCodeReview.model": {
-          "type": "string",
-          "default": "claude-haiku-4.5",
-          "markdownDescription": "Model name for the selected provider. To pick from a fetched list, run [Code Review: Pick Model](command:vscodeCodeReview.pickModel)."
-        },
         "vscodeCodeReview.openaiApiKey": {
+          "order": 2,
           "type": "string",
           "default": "",
           "markdownDescription": "**OpenAI API key** (stored in settings as plain text). Prefer using a dedicated VS Code profile for this if needed."
         },
         "vscodeCodeReview.anthropicApiKey": {
+          "order": 3,
           "type": "string",
           "default": "",
           "markdownDescription": "**Anthropic API key** (stored in settings as plain text). Prefer using a dedicated VS Code profile for this if needed."
         },
         "vscodeCodeReview.googleApiKey": {
+          "order": 4,
           "type": "string",
           "default": "",
           "markdownDescription": "**Google API key** (stored in settings as plain text). Prefer using a dedicated VS Code profile for this if needed."
+        },
+        "vscodeCodeReview.model": {
+          "order": 5,
+          "type": "string",
+          "default": "claude-haiku-4.5",
+          "markdownDescription": "Model name for the selected provider. To pick from a fetched list, run [Code Review: Pick Model](command:vscodeCodeReview.pickModel)."
         }
       }
     }

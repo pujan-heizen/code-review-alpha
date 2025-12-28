@@ -226,7 +226,7 @@ Return the JSON object (no markdown fences, no extra text) matching this shape:
       "startLine": 1,
       "endLine": 1,
       "replacement": "string",
-      "expectedOriginalSnippet": "string|null"
+      "expectedOriginalSnippet": "string (REQUIRED - exact code being replaced)"
     }
   ]
 }
@@ -236,6 +236,7 @@ Notes:
 - Do not omit fields. Use `null` for nullable fields and `[]` for arrays when empty.
 - For `findings`: if you cannot confidently map to a specific file, set `filePath: null`, `startLine: null`, `endLine: null`.
 - For `fixes`: only include a fix when you can provide a complete correct replacement for `startLine..endLine`.
+- **CRITICAL for `fixes`**: The `expectedOriginalSnippet` field is REQUIRED and must contain the EXACT original code that will be replaced (the code currently at lines `startLine` to `endLine`). This is used for content-based matching to ensure fixes can be applied reliably even if line numbers change. Without this field, fixes may fail to apply.
 
 ---
 

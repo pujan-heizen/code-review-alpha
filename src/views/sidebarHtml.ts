@@ -60,8 +60,12 @@ export function getSidebarHtml(): { html: string; nonce: string } {
       background: var(--vscode-button-background);
       color: var(--vscode-button-foreground);
     }
-    .primary:hover {
+    .primary:hover:not(:disabled) {
       background: var(--vscode-button-hoverBackground);
+    }
+    .primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
     .secondary {
       background: var(--vscode-button-secondaryBackground);
@@ -111,6 +115,7 @@ export function getSidebarHtml(): { html: string; nonce: string } {
 
   <div class="row">
     <button class="primary" id="run">Run Code Review</button>
+    <button class="secondary" id="cancel" style="display:none;">Stop</button>
   </div>
 
   <div class="sectionTitle" style="margin-top:16px;">Activity</div>
@@ -124,6 +129,7 @@ export function getSidebarHtml(): { html: string; nonce: string } {
     const vscode = acquireVsCodeApi();
     const promptSelect = document.getElementById('promptSelect');
     const runBtn = document.getElementById('run');
+    const cancelBtn = document.getElementById('cancel');
     const settingsBtn = document.getElementById('settings');
     const editPromptBtn = document.getElementById('editPrompt');
     const newPromptBtn = document.getElementById('newPrompt');
@@ -136,6 +142,10 @@ export function getSidebarHtml(): { html: string; nonce: string } {
 
     runBtn.addEventListener('click', () => {
       vscode.postMessage({ type: 'runReview' });
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      vscode.postMessage({ type: 'cancelReview' });
     });
 
     settingsBtn.addEventListener('click', () => vscode.postMessage({ type: 'openSettings' }));
@@ -176,12 +186,15 @@ export function getSidebarHtml(): { html: string; nonce: string } {
           setStatus(msg.isReviewing ? 'Reviewing…' : 'Idle');
           setActivity(msg.activity || []);
           setUsage(msg.usageText || 'N/A');
-          const disabled = !!msg.isReviewing;
-          runBtn.disabled = disabled;
-          promptSelect.disabled = disabled;
-          editPromptBtn.disabled = disabled;
-          newPromptBtn.disabled = disabled;
-          deletePromptBtn.disabled = disabled;
+          const isReviewing = !!msg.isReviewing;
+          runBtn.disabled = isReviewing;
+          runBtn.textContent = isReviewing ? '⏳ Reviewing...' : 'Run Code Review';
+          cancelBtn.style.display = isReviewing ? 'block' : 'none';
+          promptSelect.disabled = isReviewing;
+          editPromptBtn.disabled = isReviewing;
+          newPromptBtn.disabled = isReviewing;
+          deletePromptBtn.disabled = isReviewing;
+          settingsBtn.disabled = isReviewing;
 
           // prompts
           if (Array.isArray(msg.prompts)) {

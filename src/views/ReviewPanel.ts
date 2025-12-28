@@ -78,14 +78,19 @@ export class ReviewPanel {
     const fix = this.lastOutput?.fixes.find((f) => f.id === fixId);
     if (!fix) {
       await vscode.window.showErrorMessage(`Fix not found: ${fixId}`);
+      this.panel.webview.postMessage({ type: "fixFailed", fixId });
       return;
     }
 
     const res = await applyFix(fix);
     if (!res.applied) {
       await vscode.window.showErrorMessage(res.reason ?? "Failed to apply fix.");
+      this.panel.webview.postMessage({ type: "fixFailed", fixId });
       return;
     }
+    
+    // Notify webview that fix was applied successfully
+    this.panel.webview.postMessage({ type: "fixApplied", fixId });
     await vscode.window.showInformationMessage(`Applied fix: ${fix.title}`);
   }
 
